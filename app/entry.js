@@ -1,6 +1,7 @@
 'use strict';
 
 import $ from 'jquery';
+import io from 'socket.io-client';
 
 
 const gameObj = {
@@ -13,6 +14,9 @@ const gameObj = {
 	myDisplayName: $('#main').attr('data-displayName'),
 	myThumbUrl: $('#main').attr('data-thumbUrl')
 };
+
+const socketQueryParameters = `isplayName=${gameObj.myDisplayName}&thumbUrl=${gameObj.myThumbUrl}`;
+const socket = io(`${$('#main').attr('data-ipAddress')}?${socketQueryParameters}`);
 
 function init() {
 
@@ -73,6 +77,9 @@ function drawSubmarine(ctxRader) {
 	ctxRader.drawImage(gameObj.submarineImage, - (gameObj.submarineImage.width / 2), - (gameObj.submarineImage.height / 2));
 	ctxRader.restore();
 }
+
+socket.on('start data', (startObj) => { console.log('start data came'); });
+socket.on('map data', (compressed) => { console.log('map data came'); });
 
 function getRadian(degree) {
 
