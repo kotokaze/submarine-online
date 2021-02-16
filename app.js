@@ -4,9 +4,31 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var helmet = require('helmet');
+var session = require('express-session');
+var passport = require('passport');
+var Strategy = require('passport-twitter').Strategy;
+var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+
+passport.use(
+  new Strategy(
+    {
+      consumerKey: config.twitter.consumerKey,
+      consumerSecret: config.twitter.consumerSecret,
+      callbackURL: config.twitter.callbackURL
+    },
+
+    function (token, tokenSecret, profile, cb) {
+
+      process.nextTick(() => cb(null, profile));
+    }
+  )
+);
+
+passport.serializeUser((user, cb) => { cb(null, user); });
+passport.deserializeUser((obj, cb) => { cb(null, obj); });
 
 var app = express();
 app.use(helmet());
@@ -21,8 +43,32 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(session({ secret: '08ebdda4948e2faa', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+app.get('/login/twitter', passport.authenticate('twitter'));
+app.get('/oauth_callback', passport.authenticate('twitter', { failureRedirect: '/' }), (req, res) => {
+
+  res.redirect('/');
+});
+
+app.get('/logout',　(req, res) => {
+
+    req.logout();
+    res.redirect('/');
+});
+
+function ensureAuthenticated(req, res, next) {
+
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  else res.redirect('/');
+}
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
