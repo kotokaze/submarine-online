@@ -5933,6 +5933,7 @@ var gameObj = {
 	itemRadius: 4,
 	airRadius: 5,
 	deg: 0,
+	counter: 0,
 	rotationDegreeByDirection: { 'left': 0, 'up': 270, 'down': 90, 'right': 0 },
 	myDisplayName: (0, _jquery2.default)('#main').attr('data-displayName'),
 	myThumbUrl: (0, _jquery2.default)('#main').attr('data-thumbUrl'),
@@ -5985,6 +5986,8 @@ function ticker() {
 	gameObj.ctxScore.clearRect(0, 0, gameObj.scoreCanvasWidth, gameObj.scoreCanvasHeight);
 	drawAirTimer(gameObj.ctxScore, gameObj.myPlayerObj.airTime);
 	drawMissiles(gameObj.ctxScore, gameObj.myPlayerObj.missilesMany);
+
+	gameObj.counter = (gameObj.counter + 1) % 10000;
 }
 setInterval(ticker, 33);
 
@@ -6012,36 +6015,89 @@ function drawRader(ctxRader) {
 
 function drawMap(gameObj) {
 
-	// アイテムの描画
+	// 敵プレイヤーと NPC の描画
 	var _iteratorNormalCompletion = true;
 	var _didIteratorError = false;
 	var _iteratorError = undefined;
 
 	try {
-		for (var _iterator = gameObj.itemsMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+		for (var _iterator = gameObj.playersMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 			var _ref = _step.value;
 
 			var _ref2 = _slicedToArray(_ref, 2);
 
-			var index = _ref2[0];
-			var item = _ref2[1];
+			var key = _ref2[0];
+			var enemyPlayerObj = _ref2[1];
 
 
-			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, item.x, item.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
+			// 自分は描画しない
+			if (key === gameObj.myPlayerObj.playerId) {
+				continue;
+			}
+
+			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, enemyPlayerObj.x, enemyPlayerObj.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
 
 			if (distanceObj.distanceX <= gameObj.raderCanvasWidth / 2 && distanceObj.distanceY <= gameObj.raderCanvasHeight / 2) {
 
-				var degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
-				var opacity = calcOpacity(degreeDiff);
+				if (enemyPlayerObj.isAlive === false) {
+					continue;
+				}
 
-				gameObj.ctxRader.fillStyle = 'rgba(255, 165, 0, ' + opacity + ')';
+				var degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
+				var toumeido = calcOpacity(degreeDiff);
+
+				var drawRadius = gameObj.counter % 12 + 2 + 12;
+				var clearRadius = drawRadius - 2;
+				var drawRadius2 = gameObj.counter % 12 + 2;
+				var clearRadius2 = drawRadius2 - 2;
+
+				gameObj.ctxRader.fillStyle = 'rgba(0, 0, 255, ' + toumeido + ')';
 				gameObj.ctxRader.beginPath();
-				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, gameObj.itemRadius, 0, Math.PI * 2, true);
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, drawRadius, 0, Math.PI * 2, true);
 				gameObj.ctxRader.fill();
+
+				gameObj.ctxRader.fillStyle = 'rgb(0, 20, 50)';
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, clearRadius, 0, Math.PI * 2, true);
+				gameObj.ctxRader.fill();
+
+				gameObj.ctxRader.fillStyle = 'rgba(0, 0, 255, ' + toumeido + ')';
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, drawRadius2, 0, Math.PI * 2, true);
+				gameObj.ctxRader.fill();
+
+				gameObj.ctxRader.fillStyle = 'rgb(0, 20, 50)';
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, clearRadius2, 0, Math.PI * 2, true);
+				gameObj.ctxRader.fill();
+
+				if (enemyPlayerObj.displayName === 'anonymous') {
+
+					gameObj.ctxRader.strokeStyle = 'rgba(250, 250, 250, ' + opacity + ')';
+					gameObj.ctxRader.fillStyle = 'rgba(250, 250, 250, ' + opacity + ')';
+					gameObj.ctxRader.beginPath();
+					gameObj.ctxRader.moveTo(distanceObj.drawX, distanceObj.drawY);
+					gameObj.ctxRader.lineTo(distanceObj.drawX + 20, distanceObj.drawY - 20);
+					gameObj.ctxRader.lineTo(distanceObj.drawX + 20 + 40, distanceObj.drawY - 20);
+					gameObj.ctxRader.stroke();
+					gameObj.ctxRader.font = '8px Arial';
+					gameObj.ctxRader.fillText('anonymous', distanceObj.drawX + 20, distanceObj.drawY - 20 - 1);
+				} else {
+
+					gameObj.ctxRader.strokeStyle = 'rgba(250, 250, 250, ' + opacity + ')';
+					gameObj.ctxRader.fillStyle = 'rgba(250, 250, 250, ' + opacity + ')';
+					gameObj.ctxRader.beginPath();
+					gameObj.ctxRader.moveTo(distanceObj.drawX, distanceObj.drawY);
+					gameObj.ctxRader.lineTo(distanceObj.drawX + 20, distanceObj.drawY - 20);
+					gameObj.ctxRader.lineTo(distanceObj.drawX + 20 + 40, distanceObj.drawY - 20);
+					gameObj.ctxRader.stroke();
+					gameObj.ctxRader.font = '8px Arial';
+					gameObj.ctxRader.fillText(enemyPlayerObj.displayName, distanceObj.drawX + 20, distanceObj.drawY - 20 - 1);
+				}
 			}
 		}
 
-		// 空気の描画
+		// アイテムの描画
 	} catch (err) {
 		_didIteratorError = true;
 		_iteratorError = err;
@@ -6062,28 +6118,30 @@ function drawMap(gameObj) {
 	var _iteratorError2 = undefined;
 
 	try {
-		for (var _iterator2 = gameObj.airMap[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+		for (var _iterator2 = gameObj.itemsMap[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 			var _ref3 = _step2.value;
 
 			var _ref4 = _slicedToArray(_ref3, 2);
 
-			var airKey = _ref4[0];
-			var airObj = _ref4[1];
+			var index = _ref4[0];
+			var item = _ref4[1];
 
 
-			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, airObj.x, airObj.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
+			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, item.x, item.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
 
 			if (distanceObj.distanceX <= gameObj.raderCanvasWidth / 2 && distanceObj.distanceY <= gameObj.raderCanvasHeight / 2) {
 
 				var _degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
 				var _opacity = calcOpacity(_degreeDiff);
 
-				gameObj.ctxRader.fillStyle = 'rgb(0, 220, 255, ' + _opacity + ')';
+				gameObj.ctxRader.fillStyle = 'rgba(255, 165, 0, ' + _opacity + ')';
 				gameObj.ctxRader.beginPath();
-				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, gameObj.airRadius, 0, Math.PI * 2, true);
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, gameObj.itemRadius, 0, Math.PI * 2, true);
 				gameObj.ctxRader.fill();
 			}
 		}
+
+		// 空気の描画
 	} catch (err) {
 		_didIteratorError2 = true;
 		_iteratorError2 = err;
@@ -6095,6 +6153,48 @@ function drawMap(gameObj) {
 		} finally {
 			if (_didIteratorError2) {
 				throw _iteratorError2;
+			}
+		}
+	}
+
+	var _iteratorNormalCompletion3 = true;
+	var _didIteratorError3 = false;
+	var _iteratorError3 = undefined;
+
+	try {
+		for (var _iterator3 = gameObj.airMap[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+			var _ref5 = _step3.value;
+
+			var _ref6 = _slicedToArray(_ref5, 2);
+
+			var airKey = _ref6[0];
+			var airObj = _ref6[1];
+
+
+			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, airObj.x, airObj.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
+
+			if (distanceObj.distanceX <= gameObj.raderCanvasWidth / 2 && distanceObj.distanceY <= gameObj.raderCanvasHeight / 2) {
+
+				var _degreeDiff2 = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
+				var _opacity2 = calcOpacity(_degreeDiff2);
+
+				gameObj.ctxRader.fillStyle = 'rgb(0, 220, 255, ' + _opacity2 + ')';
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, gameObj.airRadius, 0, Math.PI * 2, true);
+				gameObj.ctxRader.fill();
+			}
+		}
+	} catch (err) {
+		_didIteratorError3 = true;
+		_iteratorError3 = err;
+	} finally {
+		try {
+			if (!_iteratorNormalCompletion3 && _iterator3.return) {
+				_iterator3.return();
+			}
+		} finally {
+			if (_didIteratorError3) {
+				throw _iteratorError3;
 			}
 		}
 	}
@@ -6146,13 +6246,13 @@ socket.on('map data', function (compressed) {
 
 	gameObj.playersMap = new Map();
 
-	var _iteratorNormalCompletion3 = true;
-	var _didIteratorError3 = false;
-	var _iteratorError3 = undefined;
+	var _iteratorNormalCompletion4 = true;
+	var _didIteratorError4 = false;
+	var _iteratorError4 = undefined;
 
 	try {
-		for (var _iterator3 = playersArray[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-			var compressedPlayerData = _step3.value;
+		for (var _iterator4 = playersArray[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+			var compressedPlayerData = _step4.value;
 
 
 			var player = {};
@@ -6182,16 +6282,16 @@ socket.on('map data', function (compressed) {
 			}
 		}
 	} catch (err) {
-		_didIteratorError3 = true;
-		_iteratorError3 = err;
+		_didIteratorError4 = true;
+		_iteratorError4 = err;
 	} finally {
 		try {
-			if (!_iteratorNormalCompletion3 && _iterator3.return) {
-				_iterator3.return();
+			if (!_iteratorNormalCompletion4 && _iterator4.return) {
+				_iterator4.return();
 			}
 		} finally {
-			if (_didIteratorError3) {
-				throw _iteratorError3;
+			if (_didIteratorError4) {
+				throw _iteratorError4;
 			}
 		}
 	}

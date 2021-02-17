@@ -12,6 +12,7 @@ const gameObj = {
 	itemRadius: 4,
 	airRadius: 5,
 	deg: 0,
+	counter: 0,
 	rotationDegreeByDirection: { 'left': 0, 'up': 270, 'down': 90, 'right': 0 },
 	myDisplayName: $('#main').attr('data-displayName'),
 	myThumbUrl: $('#main').attr('data-thumbUrl'),
@@ -62,6 +63,8 @@ function ticker() {
 	gameObj.ctxScore.clearRect(0, 0, gameObj.scoreCanvasWidth, gameObj.scoreCanvasHeight);
 	drawAirTimer(gameObj.ctxScore, gameObj.myPlayerObj.airTime);
 	drawMissiles(gameObj.ctxScore, gameObj.myPlayerObj.missilesMany);
+
+	gameObj.counter = (gameObj.counter + 1) % 10000;
 }
 setInterval(ticker, 33);
 
@@ -88,6 +91,79 @@ function drawRader(ctxRader) {
 }
 
 function drawMap(gameObj) {
+
+	// 敵プレイヤーと NPC の描画
+	for (const [key, enemyPlayerObj] of gameObj.playersMap) {
+
+		// 自分は描画しない
+		if (key === gameObj.myPlayerObj.playerId) { continue; }
+
+		const distanceObj = calculationBetweenTwoPoints(
+			gameObj.myPlayerObj.x, gameObj.myPlayerObj.y,
+			enemyPlayerObj.x, enemyPlayerObj.y,
+			gameObj.fieldWidth, gameObj.fieldHeight,
+			gameObj.raderCanvasWidth, gameObj.raderCanvasHeight
+		);
+
+		if ((distanceObj.distanceX <= (gameObj.raderCanvasWidth / 2)) && (distanceObj.distanceY <= (gameObj.raderCanvasHeight / 2))) {
+
+			if (enemyPlayerObj.isAlive === false) { continue; }
+
+			const degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
+			const toumeido = calcOpacity(degreeDiff);
+
+			const drawRadius = gameObj.counter % 12 + 2 + 12;
+			const clearRadius = drawRadius - 2;
+			const drawRadius2 = gameObj.counter % 12 + 2;
+			const clearRadius2 = drawRadius2 - 2;
+
+			gameObj.ctxRader.fillStyle = `rgba(0, 0, 255, ${toumeido})`;
+			gameObj.ctxRader.beginPath();
+			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, drawRadius, 0, Math.PI * 2, true);
+			gameObj.ctxRader.fill();
+
+			gameObj.ctxRader.fillStyle = `rgb(0, 20, 50)`;
+			gameObj.ctxRader.beginPath();
+			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, clearRadius, 0, Math.PI * 2, true);
+			gameObj.ctxRader.fill();
+
+			gameObj.ctxRader.fillStyle = `rgba(0, 0, 255, ${toumeido})`;
+			gameObj.ctxRader.beginPath();
+			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, drawRadius2, 0, Math.PI * 2, true);
+			gameObj.ctxRader.fill();
+
+			gameObj.ctxRader.fillStyle = `rgb(0, 20, 50)`;
+			gameObj.ctxRader.beginPath();
+			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, clearRadius2, 0, Math.PI * 2, true);
+			gameObj.ctxRader.fill();
+
+
+			if (enemyPlayerObj.displayName === 'anonymous') {
+
+				gameObj.ctxRader.strokeStyle = `rgba(250, 250, 250, ${opacity})`;
+				gameObj.ctxRader.fillStyle = `rgba(250, 250, 250, ${opacity})`;
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.moveTo(distanceObj.drawX, distanceObj.drawY);
+				gameObj.ctxRader.lineTo(distanceObj.drawX + 20, distanceObj.drawY - 20);
+				gameObj.ctxRader.lineTo(distanceObj.drawX + 20 + 40, distanceObj.drawY - 20);
+				gameObj.ctxRader.stroke();
+				gameObj.ctxRader.font = '8px Arial';
+				gameObj.ctxRader.fillText('anonymous', distanceObj.drawX + 20, distanceObj.drawY - 20 - 1);
+			}
+			else {
+
+				gameObj.ctxRader.strokeStyle = `rgba(250, 250, 250, ${opacity})`;
+				gameObj.ctxRader.fillStyle = `rgba(250, 250, 250, ${opacity})`;
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.moveTo(distanceObj.drawX, distanceObj.drawY);
+				gameObj.ctxRader.lineTo(distanceObj.drawX + 20, distanceObj.drawY - 20);
+				gameObj.ctxRader.lineTo(distanceObj.drawX + 20 + 40, distanceObj.drawY - 20);
+				gameObj.ctxRader.stroke();
+				gameObj.ctxRader.font = '8px Arial';
+				gameObj.ctxRader.fillText(enemyPlayerObj.displayName, distanceObj.drawX + 20, distanceObj.drawY - 20 - 1);
+			}
+		}
+	}
 
 	// アイテムの描画
 	for (const [index, item] of gameObj.itemsMap) {
