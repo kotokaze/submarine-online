@@ -132,19 +132,19 @@ function drawMap(gameObj) {
 
 			if (enemyPlayerObj.isAlive === false) {
 
-				drawBom(gameObj.ctxRader, distanceObj.drawX, distanceObj.drawY, tekiPlayerObj.deadCount);
+				drawBom(gameObj.ctxRader, distanceObj.drawX, distanceObj.drawY, enemyPlayerObj.deadCount);
 				continue;
 			}
 
 			const degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
-			const toumeido = calcOpacity(degreeDiff);
+			const opacity = calcOpacity(degreeDiff);
 
 			const drawRadius = gameObj.counter % 12 + 2 + 12;
 			const clearRadius = drawRadius - 2;
 			const drawRadius2 = gameObj.counter % 12 + 2;
 			const clearRadius2 = drawRadius2 - 2;
 
-			gameObj.ctxRader.fillStyle = `rgba(0, 0, 255, ${toumeido})`;
+			gameObj.ctxRader.fillStyle = `rgba(0, 0, 255, ${opacity})`;
 			gameObj.ctxRader.beginPath();
 			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, drawRadius, 0, Math.PI * 2, true);
 			gameObj.ctxRader.fill();
@@ -154,7 +154,7 @@ function drawMap(gameObj) {
 			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, clearRadius, 0, Math.PI * 2, true);
 			gameObj.ctxRader.fill();
 
-			gameObj.ctxRader.fillStyle = `rgba(0, 0, 255, ${toumeido})`;
+			gameObj.ctxRader.fillStyle = `rgba(0, 0, 255, ${opacity})`;
 			gameObj.ctxRader.beginPath();
 			gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, drawRadius2, 0, Math.PI * 2, true);
 			gameObj.ctxRader.fill();
