@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var config = require('../config');
+// var config = require('../config');
 
 /* GET home page. */
 router.get('/', (req, res, next) => {
@@ -19,7 +19,7 @@ router.get('/', (req, res, next) => {
 			title: '潜水艦ゲーム',
 			displayName: displayName,
 			thumbUrl: thumbUrl,
-			ipAddress: config.ipAddress
+			ipAddress: process.env.ipAddress
 		}
 	);
 });

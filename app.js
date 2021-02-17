@@ -7,7 +7,7 @@ var helmet = require('helmet');
 var session = require('express-session');
 var passport = require('passport');
 var Strategy = require('passport-twitter').Strategy;
-var config = require('./config');
+// var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -18,7 +18,7 @@ passport.use(
     {
       consumerKey: config.twitter.consumerKey,
       consumerSecret: config.twitter.consumerSecret,
-      callbackURL: config.ipAddress + config.twitter.callbackURL
+      callbackURL: `${config.ipAddress}/${config.twitter.callbackURL}`
     },
 
     function (token, tokenSecret, profile, cb) {
