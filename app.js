@@ -18,7 +18,7 @@ passport.use(
     {
       consumerKey: process.env.consumerKey,
       consumerSecret: process.env.consumerSecret,
-      callbackURL: `${process.env.ipAddress}/oauth_login`
+      callbackURL: `${process.env.ipAddress}/oauth_callback`
     },
 
     function (token, tokenSecret, profile, cb) {
