@@ -18,7 +18,7 @@ passport.use(
     {
       consumerKey: config.twitter.consumerKey,
       consumerSecret: config.twitter.consumerSecret,
-      callbackURL: config.twitter.callbackURL
+      callbackURL: config.ipAddress + config.twitter.callbackURL
     },
 
     function (token, tokenSecret, profile, cb) {

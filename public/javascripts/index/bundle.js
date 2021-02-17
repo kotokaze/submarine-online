@@ -5997,6 +5997,8 @@ function ticker() {
 	gameObj.ctxScore.clearRect(0, 0, gameObj.scoreCanvasWidth, gameObj.scoreCanvasHeight);
 	drawAirTimer(gameObj.ctxScore, gameObj.myPlayerObj.airTime);
 	drawMissiles(gameObj.ctxScore, gameObj.myPlayerObj.missilesMany);
+	drawScore(gameObj.ctxScore, gameObj.myPlayerObj.score);
+	drawRanking(gameObj.ctxScore, gameObj.playersMap);
 
 	moveInClient(gameObj.myPlayerObj, gameObj.flyingMissilesMap);
 
@@ -6107,7 +6109,7 @@ function drawMap(gameObj) {
 					gameObj.ctxRader.stroke();
 					gameObj.ctxRader.font = '8px Arial';
 					gameObj.ctxRader.fillText('anonymous', distanceObj.drawX + 20, distanceObj.drawY - 20 - 1);
-				} else {
+				} else if (enemyPlayerObj.displayName) {
 
 					gameObj.ctxRader.strokeStyle = 'rgba(250, 250, 250, ' + opacity + ')';
 					gameObj.ctxRader.fillStyle = 'rgba(250, 250, 250, ' + opacity + ')';
@@ -6383,6 +6385,37 @@ function drawAirTimer(ctxScore, airTime) {
 	ctxScore.fillStyle = "rgb(0, 220, 250)";
 	ctxScore.font = 'bold 40px Arial';
 	ctxScore.fillText(airTime, 110, 50);
+}
+
+function drawScore(ctxScore, score) {
+
+	ctxScore.fillStyle = "rgb(26, 26, 26)";
+	ctxScore.font = '28px Arial';
+	ctxScore.fillText('score: ' + score, 10, 180);
+}
+
+function drawRanking(ctxScore, playersMap) {
+
+	var playersArray = [].concat(Array.from(playersMap));
+	playersArray.sort(function (a, b) {
+		return b[1].score - a[1].score;
+	});
+
+	ctxScore.fillStyle = "rgb(0, 0, 0)";
+	ctxScore.fillRect(0, 220, gameObj.scoreCanvasWidth, 3);
+
+	ctxScore.fillStyle = "rgb(26, 26, 26)";
+	ctxScore.font = '20px Arial';
+
+	for (var i = 0; i < 10; i++) {
+
+		if (!playersArray[i]) {
+			return;
+		}
+
+		var rank = i + 1;
+		ctxScore.fillText(rank + 'th ' + playersArray[i][1].displayName + ' ' + playersArray[i][1].score, 10, 220 + rank * 26);
+	}
 }
 
 socket.on('start data', function (startObj) {
