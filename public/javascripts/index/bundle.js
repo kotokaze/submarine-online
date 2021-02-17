@@ -5913,6 +5913,8 @@ module.exports = function(obj, fn){
 "use strict";
 
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _jquery = __webpack_require__(27);
 
 var _jquery2 = _interopRequireDefault(_jquery);
@@ -5924,7 +5926,6 @@ var _socket2 = _interopRequireDefault(_socket);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var gameObj = {
-
 	raderCanvasWidth: 500,
 	raderCanvasHeight: 500,
 	scoreCanvasWidth: 300,
@@ -5932,6 +5933,7 @@ var gameObj = {
 	itemRadius: 4,
 	airRadius: 5,
 	deg: 0,
+	rotationDegreeByDirection: { 'left': 0, 'up': 270, 'down': 90, 'right': 0 },
 	myDisplayName: (0, _jquery2.default)('#main').attr('data-displayName'),
 	myThumbUrl: (0, _jquery2.default)('#main').attr('data-thumbUrl'),
 	fieldWidth: null,
@@ -5961,15 +5963,28 @@ function init() {
 	var submarineImage = new Image();
 	submarineImage.src = '/images/submarine.png';
 	gameObj.submarineImage = submarineImage;
+
+	// ミサイルの画像
+	gameObj.missileImage = new Image();
+	gameObj.missileImage.src = '/images/missile.png';
 }
 init();
 
 function ticker() {
 
+	if (!gameObj.myPlayerObj || !gameObj.playersMap) {
+		return;
+	}
+
 	gameObj.ctxRader.clearRect(0, 0, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
 
 	drawRader(gameObj.ctxRader);
-	drawSubmarine(gameObj.ctxRader);
+	drawMap(gameObj);
+	drawSubmarine(gameObj.ctxRader, gameObj.myPlayerObj);
+
+	gameObj.ctxScore.clearRect(0, 0, gameObj.scoreCanvasWidth, gameObj.scoreCanvasHeight);
+	drawAirTimer(gameObj.ctxScore, gameObj.myPlayerObj.airTime);
+	drawMissiles(gameObj.ctxScore, gameObj.myPlayerObj.missilesMany);
 }
 setInterval(ticker, 33);
 
@@ -5995,12 +6010,123 @@ function drawRader(ctxRader) {
 	gameObj.deg = (gameObj.deg + 5) % 360;
 }
 
-function drawSubmarine(ctxRader) {
+function drawMap(gameObj) {
+
+	// アイテムの描画
+	var _iteratorNormalCompletion = true;
+	var _didIteratorError = false;
+	var _iteratorError = undefined;
+
+	try {
+		for (var _iterator = gameObj.itemsMap[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+			var _ref = _step.value;
+
+			var _ref2 = _slicedToArray(_ref, 2);
+
+			var index = _ref2[0];
+			var item = _ref2[1];
+
+
+			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, item.x, item.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
+
+			if (distanceObj.distanceX <= gameObj.raderCanvasWidth / 2 && distanceObj.distanceY <= gameObj.raderCanvasHeight / 2) {
+
+				var degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
+				var opacity = calcOpacity(degreeDiff);
+
+				gameObj.ctxRader.fillStyle = 'rgba(255, 165, 0, ' + opacity + ')';
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, gameObj.itemRadius, 0, Math.PI * 2, true);
+				gameObj.ctxRader.fill();
+			}
+		}
+
+		// 空気の描画
+	} catch (err) {
+		_didIteratorError = true;
+		_iteratorError = err;
+	} finally {
+		try {
+			if (!_iteratorNormalCompletion && _iterator.return) {
+				_iterator.return();
+			}
+		} finally {
+			if (_didIteratorError) {
+				throw _iteratorError;
+			}
+		}
+	}
+
+	var _iteratorNormalCompletion2 = true;
+	var _didIteratorError2 = false;
+	var _iteratorError2 = undefined;
+
+	try {
+		for (var _iterator2 = gameObj.airMap[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+			var _ref3 = _step2.value;
+
+			var _ref4 = _slicedToArray(_ref3, 2);
+
+			var airKey = _ref4[0];
+			var airObj = _ref4[1];
+
+
+			var distanceObj = calculationBetweenTwoPoints(gameObj.myPlayerObj.x, gameObj.myPlayerObj.y, airObj.x, airObj.y, gameObj.fieldWidth, gameObj.fieldHeight, gameObj.raderCanvasWidth, gameObj.raderCanvasHeight);
+
+			if (distanceObj.distanceX <= gameObj.raderCanvasWidth / 2 && distanceObj.distanceY <= gameObj.raderCanvasHeight / 2) {
+
+				var _degreeDiff = calcDegreeDiffFromRadar(gameObj.deg, distanceObj.degree);
+				var _opacity = calcOpacity(_degreeDiff);
+
+				gameObj.ctxRader.fillStyle = 'rgb(0, 220, 255, ' + _opacity + ')';
+				gameObj.ctxRader.beginPath();
+				gameObj.ctxRader.arc(distanceObj.drawX, distanceObj.drawY, gameObj.airRadius, 0, Math.PI * 2, true);
+				gameObj.ctxRader.fill();
+			}
+		}
+	} catch (err) {
+		_didIteratorError2 = true;
+		_iteratorError2 = err;
+	} finally {
+		try {
+			if (!_iteratorNormalCompletion2 && _iterator2.return) {
+				_iterator2.return();
+			}
+		} finally {
+			if (_didIteratorError2) {
+				throw _iteratorError2;
+			}
+		}
+	}
+}
+
+function drawSubmarine(ctxRader, myPlayerObj) {
+
+	var rotationDegree = gameObj.rotationDegreeByDirection[myPlayerObj.direction];
 
 	ctxRader.save();
 	ctxRader.translate(gameObj.raderCanvasWidth / 2, gameObj.raderCanvasHeight / 2);
+	ctxRader.rotate(getRadian(rotationDegree));
+	if (myPlayerObj.direction === 'left') {
+		ctxRader.scale(-1, 1);
+	}
 	ctxRader.drawImage(gameObj.submarineImage, -(gameObj.submarineImage.width / 2), -(gameObj.submarineImage.height / 2));
 	ctxRader.restore();
+}
+
+function drawMissiles(ctxScore, missilesMany) {
+
+	for (var i = 0; i < missilesMany; i++) {
+
+		ctxScore.drawImage(gameObj.missileImage, 50 * i, 80);
+	}
+}
+
+function drawAirTimer(ctxScore, airTime) {
+
+	ctxScore.fillStyle = "rgb(0, 220, 250)";
+	ctxScore.font = 'bold 40px Arial';
+	ctxScore.fillText(airTime, 110, 50);
 }
 
 socket.on('start data', function (startObj) {
@@ -6020,13 +6146,13 @@ socket.on('map data', function (compressed) {
 
 	gameObj.playersMap = new Map();
 
-	var _iteratorNormalCompletion = true;
-	var _didIteratorError = false;
-	var _iteratorError = undefined;
+	var _iteratorNormalCompletion3 = true;
+	var _didIteratorError3 = false;
+	var _iteratorError3 = undefined;
 
 	try {
-		for (var _iterator = playersArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-			var compressedPlayerData = _step.value;
+		for (var _iterator3 = playersArray[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+			var compressedPlayerData = _step3.value;
 
 
 			var player = {};
@@ -6038,6 +6164,8 @@ socket.on('map data', function (compressed) {
 			player.score = compressedPlayerData[4];
 			player.isAlive = compressedPlayerData[5];
 			player.direction = compressedPlayerData[6];
+			player.missilesMany = compressedPlayerData[7];
+			player.airTime = compressedPlayerData[8];
 
 			gameObj.playersMap.set(player.playerId, player);
 
@@ -6049,19 +6177,21 @@ socket.on('map data', function (compressed) {
 				gameObj.myPlayerObj.displayName = compressedPlayerData[3];
 				gameObj.myPlayerObj.score = compressedPlayerData[4];
 				gameObj.myPlayerObj.isAlive = compressedPlayerData[5];
+				gameObj.myPlayerObj.missilesMany = compressedPlayerData[7];
+				gameObj.myPlayerObj.airTime = compressedPlayerData[8];
 			}
 		}
 	} catch (err) {
-		_didIteratorError = true;
-		_iteratorError = err;
+		_didIteratorError3 = true;
+		_iteratorError3 = err;
 	} finally {
 		try {
-			if (!_iteratorNormalCompletion && _iterator.return) {
-				_iterator.return();
+			if (!_iteratorNormalCompletion3 && _iterator3.return) {
+				_iterator3.return();
 			}
 		} finally {
-			if (_didIteratorError) {
-				throw _iteratorError;
+			if (_didIteratorError3) {
+				throw _iteratorError3;
 			}
 		}
 	}
@@ -6077,15 +6207,163 @@ socket.on('map data', function (compressed) {
 
 		gameObj.airMap.set(index, { x: compressedAirData[0], y: compressedAirData[1] });
 	});
-
-	console.log(gameObj.playersMap);
-	console.log(gameObj.itemsMap);
-	console.log(gameObj.airMap);
 });
 
 function getRadian(degree) {
 
 	return degree * Math.PI / 180;
+}
+
+function calculationBetweenTwoPoints(pX, pY, oX, oY, gameWidth, gameHeight, raderCanvasWidth, raderCanvasHeight) {
+
+	var distanceX = 99999999;
+	var distanceY = 99999999;
+	var drawX = null;
+	var drawY = null;
+
+	if (pX <= oX) {
+
+		// 右から
+		distanceX = oX - pX;
+		drawX = raderCanvasWidth / 2 + distanceX;
+
+		// 左から
+		var tmpDistance = pX + gameWidth - oX;
+
+		if (distanceX > tmpDistance) {
+			distanceX = tmpDistance;
+			drawX = raderCanvasWidth / 2 - distanceX;
+		}
+	} else {
+
+		// 右から
+		distanceX = pX - oX;
+		drawX = raderCanvasWidth / 2 - distanceX;
+
+		// 左から
+		var _tmpDistance = oX + gameWidth - pX;
+
+		if (distanceX > _tmpDistance) {
+			distanceX = _tmpDistance;
+			drawX = raderCanvasWidth / 2 + distanceX;
+		}
+	}
+
+	if (pY <= oY) {
+
+		// 下から
+		distanceY = oY - pY;
+		drawY = raderCanvasHeight / 2 + distanceY;
+
+		// 上から
+		var _tmpDistance2 = pY + gameHeight - oY;
+
+		if (distanceY > _tmpDistance2) {
+			distanceY = _tmpDistance2;
+			drawY = raderCanvasHeight / 2 - distanceY;
+		}
+	} else {
+
+		// 上から
+		distanceY = pY - oY;
+		drawY = raderCanvasHeight / 2 - distanceY;
+
+		// 下から
+		var _tmpDistance3 = oY + gameHeight - pY;
+
+		if (distanceY > _tmpDistance3) {
+			distanceY = _tmpDistance3;
+			drawY = raderCanvasHeight / 2 + distanceY;
+		}
+	}
+
+	var degree = calcTwoPointsDegree(drawX, drawY, raderCanvasWidth / 2, raderCanvasHeight / 2);
+
+	return {
+		distanceX: distanceX,
+		distanceY: distanceY,
+		drawX: drawX,
+		drawY: drawY,
+		degree: degree
+	};
+}
+
+function calcTwoPointsDegree(x1, y1, x2, y2) {
+
+	var radian = Math.atan2(y2 - y1, x2 - x1);
+	var degree = radian * 180 / Math.PI + 180;
+
+	return degree;
+}
+
+function calcDegreeDiffFromRadar(degRader, degItem) {
+
+	var diff = degRader - degItem;
+	if (diff < 0) {
+		diff += 360;
+	}
+
+	return diff;
+}
+
+function calcOpacity(degreeDiff) {
+
+	var deleteDeg = 270;
+	degreeDiff = degreeDiff > deleteDeg ? deleteDeg : degreeDiff; // もう少しだけ暗くするコツ
+
+	return (1 - degreeDiff / deleteDeg).toFixed(2);
+}
+
+(0, _jquery2.default)(window).keydown(function (event) {
+
+	if (!gameObj.myPlayerObj || gameObj.myPlayerObj.isAlive === false) {
+		return;
+	}
+
+	switch (event.key) {
+
+		case 'ArrowLeft':
+			if (gameObj.myPlayerObj.direction === 'left') {
+				break;
+			} // 変わってない
+			gameObj.myPlayerObj.direction = 'left';
+			drawSubmarine(gameObj.ctxRader, gameObj.myPlayerObj);
+			sendChangeDirection(socket, 'left');
+			break;
+
+		case 'ArrowUp':
+			if (gameObj.myPlayerObj.direction === 'up') {
+				break;
+			} // 変わってない
+			gameObj.myPlayerObj.direction = 'up';
+			drawSubmarine(gameObj.ctxRader, gameObj.myPlayerObj);
+			sendChangeDirection(socket, 'up');
+			break;
+
+		case 'ArrowDown':
+			if (gameObj.myPlayerObj.direction === 'down') {
+				break;
+			} // 変わってない
+			gameObj.myPlayerObj.direction = 'down';
+			drawSubmarine(gameObj.ctxRader, gameObj.myPlayerObj);
+			sendChangeDirection(socket, 'down');
+			break;
+
+		case 'ArrowRight':
+			if (gameObj.myPlayerObj.direction === 'right') break; // 変わってない
+			gameObj.myPlayerObj.direction = 'right';
+			drawSubmarine(gameObj.ctxRader, gameObj.myPlayerObj);
+			sendChangeDirection(socket, 'right');
+			break;
+
+		default:
+			break;
+	}
+});
+
+function sendChangeDirection(socket, direction) {
+
+	socket.emit('change direction', direction);
 }
 
 /***/ }),
